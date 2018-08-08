@@ -81,6 +81,7 @@ btnSignUp.addEventListener("click", (e) => {
                         .then(alert("Successfully Registered. Verification mail has been sent!"))
                         .catch(e => console.log(e.message));
                 }
+                firebase.auth().signOut();
             })
             .catch(e => {
                 // [START_EXCLUDE]
@@ -102,7 +103,7 @@ btnLogOut.addEventListener("click", (e) => {
 firebase.auth().onAuthStateChanged(firebaseUser => {
 
     if (firebaseUser) {
-        //Can use this area to interact with current user if theres a user.
+        // Can use this area to interact with current user if theres a user.
         console.log("logged in");
         btnLogOut.style.display = "inline-block";
         btnLogin.style.display = "none";
@@ -136,7 +137,7 @@ checkEmailVerification = () => {
             //goToHomePage();
         } else {
             alert("Check Your emails and verify Your Email account before Login");
-
+            firebase.auth().signOut();
         }
     }
 

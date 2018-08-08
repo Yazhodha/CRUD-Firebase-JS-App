@@ -1,0 +1,5 @@
+CRUD-FIrebase Test/
+doc-channelling test/
+# ignore all logs
+*.log
+firebase.json

@@ -17,7 +17,7 @@ resetLoginForm = () => {
 
 var user = null;
 
-firebase.auth().signOut(); //log out if previously logged in.
+// firebase.auth().signOut(); //log out if previously logged in.
 
 // Get Elements
 const txtEmail = document.getElementById("email");
@@ -102,7 +102,14 @@ btnLogOut.addEventListener("click", (e) => {
 firebase.auth().onAuthStateChanged(firebaseUser => {
 
     if (firebaseUser) {
-        //Can use this area to interact with current user.
+        //Can use this area to interact with current user if theres a user.
+        console.log("logged in");
+        btnLogOut.style.display = "inline-block";
+        btnLogin.style.display = "none";
+        btnSignUp.style.display = "none";
+        resetLoginForm();
+        document.getElementById("loginDiv").style.display = "none";
+        document.getElementById("docChannelling").style.display = "block";
     } else {
         //If not logged in this will always show the login view
         console.log("Not Logged In");
@@ -110,7 +117,7 @@ firebase.auth().onAuthStateChanged(firebaseUser => {
         btnLogin.style.display = "inline-block";
         btnSignUp.style.display = "inline-block";
         document.getElementById("loginDiv").style.display = "block";
-        document.getElementById("firstSectionDiv").style.display = "none";
+        document.getElementById("docChannelling").style.display = "none";
     }
 });
 //Check the registered email verified or not and login..
@@ -125,8 +132,8 @@ checkEmailVerification = () => {
             btnSignUp.style.display = "none";
             resetLoginForm();
             document.getElementById("loginDiv").style.display = "none";
-            document.getElementById("firstSectionDiv").style.display = "block";
-            goToHome();
+            document.getElementById("docChannelling").style.display = "block";
+            //goToHomePage();
         } else {
             alert("Check Your emails and verify Your Email account before Login");
 
@@ -136,149 +143,219 @@ checkEmailVerification = () => {
 }
 //Send verification email after registering..
 
-// firebase Authorization code ends..
+// firebase Authorization code ends..=====================================================================
+
+//========================================================================================================
+// DOC Channelling Application Login Starts...
+
+let counter = new Date().getTime();//to get a unique ID
 
 
+const table = document.getElementById("channelTable");
+const tableViewDoctor = document.getElementById("docViewTable");
+const formAddDoctor = document.getElementById("addDoctor");
+const tableViewChannelC = document.getElementById("channelViewTable");
 
+//Adding Channel Date info to the table
+addToList = () => {
+    const channelDate = document.getElementById("channelDate").value;
+    const channelDoc = document.getElementById("selectDoc").value;
+    const channelLoc = document.getElementById("selectLoc").value;
 
-// Application Logic
-goToHome = () => {
-    // readTask();
-    var date = new Date();
-    var time = date.getTime();
-    var counter = time;
-
-    document.getElementById("form").addEventListener("submit", (e) => {
-        let task = document.getElementById("task").value;
-        let description = document.getElementById("desc").value;
-        e.preventDefault();
-        // console.log(task + description);
-        createTask(task, description);
-        form.reset();
-    });
-
-    createTask = (taskName, description) => {
-        console.log(counter);
-        counter += 1;
-        console.log(counter);
-        var task = {
-            id: counter,
-            task: taskName,
-            description: description
-        }
-        let db = firebase.database().ref("tasks/" + counter); //referencing the firebase database folder.
-        db.set(task); //sending data object to the firebase db.
-
-        document.getElementById("cardSection").innerHTML = '';
-        readTask();
-    }
-    reset = () => {
-        document.getElementById("firstSection").innerHTML = `
-         <form class="border p-4 mb-4" id="form">
-
-                    <div class="form-group">
-                        <label>Task</label>
-                        <input type="text" class="form-control" id="task" placeholder="Enter Task">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label>Description</label>
-                        <input type="text" class="form-control" id="desc" placeholder="Description">
-                    </div>
-
-                    <button type="submit" id="button1" class="btn btn-primary">Add Task</button>
-                    <button style="display: none" id="button2" class="btn btn-success">Update Task</button>
-                    <button style="display: none" id="button3" class="btn btn-danger">Cancel</button>
-                </form>
-    `;
-
-        document.getElementById("form").addEventListener("submit", (e) => {
-            let task = document.getElementById("task").value;
-            let description = document.getElementById("desc").value;
-            e.preventDefault();
-            // console.log(task + description);
-            createTask(task, description);
-            form.reset();
-        });
-    }
-
-    updateTask = (id, task, description) => {
-        document.getElementById("firstSection").innerHTML = `
-        <form class="border p-4 mb-4" id="form2">
-                    <div class="form-group">
-                        <label>Task</label>
-                        <input type="text" class="form-control" id="task" placeholder="Enter Task">
-                    </div>               
-                    <div class="form-group">
-                        <label>Description</label>
-                        <input type="text" class="form-control" id="desc" placeholder="Description">
-                    </div>
-                    <button style="display: none" type="submit" id="button1" class="btn btn-primary">Add Task</button>
-                    <button type="submit" style="display: inline-block" id="button2" class="btn btn-success">Update Task</button>
-                    <button style="display: inline-block" id="button3" class="btn btn-danger">Cancel</button>
-                </form>
-    `;
-
-        document.getElementById("form2").addEventListener("submit", (e) => {
-            e.preventDefault();
-        });
-        document.getElementById("button3").addEventListener("click", (e) => {
-            reset();
-        });
-        document.getElementById("button2").addEventListener("click", (e) => {
-            updateTaskInfo(id, document.getElementById("task").value, document.getElementById("desc").value);
-        });
-        document.getElementById("task").value = task;
-        document.getElementById("desc").value = description;
-    }
-
-    updateTaskInfo = (id, task, description) => {
-        var taskUpdated = {
-            task: task,
-            id: id,
-            description: description
-        }
-        let db = firebase.database().ref("tasks/" + id);
-        db.set(taskUpdated);
-
-        document.getElementById("cardSection").innerHTML = '';
-        reset();
-        readTask();
-    }
-
-    deleteTask = (id) => {
-        let task = firebase.database().ref("tasks/" + id);
-        task.remove();
-        reset();
-        document.getElementById("cardSection").innerHTML = '';
-        readTask();
-    }
+    addChannellingDatesOfLocations(channelDate, channelDoc, channelLoc);
 }
 
-readTask = () => {
-    let task = firebase.database().ref("tasks/");
-    task.on("child_added", (data) => {
-        let taskValue = data.val();
-        // console.log(taskValue.task);
-        document.getElementById("cardSection").innerHTML += `
-        
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">
-                        ${taskValue.task}
-                    </h5>
-                    <p class="card-text">
-                        ${taskValue.description}
-                    </p>
-                    <button type="submit" style="color: white" class="btn btn-warning" onclick="updateTask(${taskValue.id},'${taskValue.task}','${taskValue.description}')">Edit Task</button>
-                    <button type="submit" style="color: white" class="btn btn-danger" onclick="deleteTask(${taskValue.id})">Delete Task</button>
-                </div>
-            </div>
-        `
+
+
+// Add Doctor Info to the firebase DB
+formAddDoctor.addEventListener("submit", (e) => {
+    let docName = document.getElementById("docName").value;
+    let docSpecial = document.getElementById("docSpecial").value;
+    let docContact = document.getElementById("docContact").value;
+    let docEmail = document.getElementById("docEmail").value;
+    e.preventDefault();
+    // console.log(task + description);
+    addDoctorInfo(docName, docSpecial, docContact, docEmail);
+    formAddDoctor.reset();
+});
+
+addDoctorInfo = (docName, docSpecial, docContact, docEmail) => {
+    counter += 1;
+    console.log(counter);
+    var doctorInfo = {
+        id: counter,
+        docName: docName,
+        docSpecial: docSpecial,
+        docContact: docContact,
+        docEmail: docEmail
+    }
+    let db = firebase.database().ref("docChannelling/doctorInfo/" + counter); //referencing the firebase database folder.
+    db.set(doctorInfo); //sending data object to the firebase db.
+
+    // viewDoctorInfo();
+}
+
+//Update Doctor Selection Combo Box
+loadSelectDoc = () => {
+    let docInfo = firebase.database().ref("docChannelling/doctorInfo/");
+    docInfo.on("child_added", (data) => {
+        let docInfoValue = data.val();
+        console.log(docInfoValue.docName);
+
+        var option = document.createElement("option");
+        option.text = docInfoValue.docName;
+        document.getElementById("selectDoc").add(option);
+
     });
-    document.getElementById("button4").style.display = "none";
+
+}
+
+// Add Channel Centre Info to the firebase DB
+formAddChannelCenter.addEventListener("submit", (e) => {
+    let channelName = document.getElementById("channelName").value;
+    let channelLoc = document.getElementById("channelLoc").value;
+    let channelAddress = document.getElementById("channelAddress").value;
+    let channelEmail = document.getElementById("channelEmail").value;
+    e.preventDefault();
+    addChannellingInfo(channelName, channelLoc, channelAddress, channelEmail);
+    formAddChannelCenter.reset();
+});
+
+addChannellingInfo = (channelName, channelLoc, channelAddress, channelEmail) => {
+    counter += 1;
+    console.log(counter);
+    var channellingInfo = {
+        id: counter,
+        channelName: channelName,
+        channelLoc: channelLoc,
+        channelAddress: channelAddress,
+        channelEmail: channelEmail
+    }
+    let db = firebase.database().ref("docChannelling/channelInfo/" + counter); //referencing the firebase database folder.
+    db.set(channellingInfo); //sending data object to the firebase db.
 
 
 }
 
-// Application Logic ends
+//Update Doctor Selection Combo Box
+loadSelectChannelCenter = () => {
+    let channelInfo = firebase.database().ref("docChannelling/channelInfo/");
+    channelInfo.on("child_added", (data) => {
+        let channelInfoValue = data.val();
+        console.log(channelInfoValue.channelName);
+
+        var option = document.createElement("option");
+        option.text = channelInfoValue.channelName;
+        document.getElementById("selectLoc").add(option);
+
+    });
+
+}
+// Add Channelling dates and Locations of Doctors to firebase
+addChannellingDatesOfLocations = (date, docName, channelCenterName) => {
+    counter += 1;
+    console.log(counter);
+    var channelDocInfo = {
+        id: counter,
+        date: date,
+        docName: docName,
+        channelCenterName: channelCenterName,
+    }
+    let db = firebase.database().ref("docChannelling/channelDocInfo/" + counter); //referencing the firebase database folder.
+    db.set(channelDocInfo); //sending data object to the firebase db.
+}
+
+//Update Channel Doctors of Locations
+loadChannelDocTable = () => {
+    let channelDocInfo = firebase.database().ref("docChannelling/channelDocInfo/");
+    channelDocInfo.on("child_added", (data) => {
+        let channelDocInfoValue = data.val();
+        console.log(channelDocInfoValue.docName, channelDocInfoValue.date, channelDocInfoValue.channelCenterName, channelDocInfoValue.id);
+
+        var row = table.insertRow(table.rows.length);
+
+        row.insertCell(0).innerHTML = channelDocInfoValue.date;
+        row.insertCell(1).innerHTML = channelDocInfoValue.docName;
+        row.insertCell(2).innerHTML = channelDocInfoValue.channelCenterName;
+        row.insertCell(3).innerHTML = `<button class='btn btn-danger' onclick='deleteRow(this, ${channelDocInfoValue.id})'>Remove</button>`
+
+    });
+
+}
+
+// View Doctor Info
+viewDoctorInfo = () => {
+    let docInfo = firebase.database().ref("docChannelling/doctorInfo/");
+    docInfo.on("child_added", (data) => {
+        let docInfoValue = data.val();
+        //console.log(channelDocInfoValue.docName, channelDocInfoValue.date, channelDocInfoValue.channelCenterName, channelDocInfoValue.id);
+        var table = document.getElementById("docViewTable");
+        var row = document.getElementById("docViewTable").insertRow(table.rows.length);
+
+        row.insertCell(0).innerHTML = docInfoValue.docName;
+        row.insertCell(1).innerHTML = docInfoValue.docSpecial;
+        row.insertCell(2).innerHTML = docInfoValue.docContact;
+        row.insertCell(3).innerHTML = docInfoValue.docEmail;
+        row.insertCell(4).innerHTML = `<button class='btn btn-danger' onclick='deleteDocRow(this, ${docInfoValue.id})'>Remove</button>`
+
+    });
+
+}
+// View Channel Centre Info
+viewChannelCentreInfo = () => {
+    let channelCInfo = firebase.database().ref("docChannelling/channelInfo/");
+    channelCInfo.on("child_added", (data) => {
+        let channelCInfoValue = data.val();
+        console.log(channelCInfoValue.channelName, channelCInfoValue.channelLoc, channelCInfoValue.channelAddress, channelCInfoValue.channelEmail);
+
+        var table = document.getElementById("channelViewTable");
+        var row = document.getElementById("channelViewTable").insertRow(table.rows.length);
+
+        row.insertCell(0).innerHTML = channelCInfoValue.channelName;
+        row.insertCell(1).innerHTML = channelCInfoValue.channelLoc;
+        row.insertCell(2).innerHTML = channelCInfoValue.channelAddress;
+        row.insertCell(3).innerHTML = channelCInfoValue.channelEmail;
+        row.insertCell(4).innerHTML = `<button class='btn btn-danger' onclick='deleteChannelRow(this, ${channelCInfoValue.id})'>Remove</button>`
+
+    });
+}
+
+//delete from channel date info table
+deleteRow = (row, id) => {
+
+    let channelDocInfo = firebase.database().ref("docChannelling/channelDocInfo/" + id);
+    channelDocInfo.remove();
+
+    const table = document.getElementById("channelTable");
+    table.deleteRow(row.parentNode.parentNode.rowIndex);
+
+}
+//delete from doctor info table
+deleteDocRow = (row, id) => {
+    let docInfo = firebase.database().ref("docChannelling/doctorInfo/" + id);
+    docInfo.remove();
+
+    tableViewDoctor.deleteRow(row.parentNode.parentNode.rowIndex);
+
+}
+//delete from channel info table
+deleteChannelRow = (row, id) => {
+    let channelInfo = firebase.database().ref("docChannelling/channelInfo/" + id);
+    channelInfo.remove();
+
+    tableViewChannelC.deleteRow(row.parentNode.parentNode.rowIndex);
+
+}
+
+whenLoad = () => {
+    viewChannelCentreInfo();
+    viewDoctorInfo();
+    loadSelectDoc();
+    loadSelectChannelCenter();
+    loadChannelDocTable();
+
+}
+
+
+    // DOC Channelling Application Login Ends...
+

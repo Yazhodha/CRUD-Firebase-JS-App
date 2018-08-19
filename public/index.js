@@ -1,11 +1,11 @@
 // firebase configuration begins
 var config = {
-    apiKey: "AIzaSyCbV57rrRi7VNcNy6O0ERJ8ornK9cpU9Vc",
-    authDomain: "crud-firebase-web.firebaseapp.com",
-    databaseURL: "https://crud-firebase-web.firebaseio.com",
-    projectId: "crud-firebase-web",
-    storageBucket: "crud-firebase-web.appspot.com",
-    messagingSenderId: "727974733780"
+    apiKey: "AIzaSyD2KJZG4IXlXTb3PpF3WjgLlfwMRwbVrmk",
+    authDomain: "docdemo-b1d43.firebaseapp.com",
+    databaseURL: "https://docdemo-b1d43.firebaseio.com",
+    projectId: "docdemo-b1d43",
+    storageBucket: "docdemo-b1d43.appspot.com",
+    messagingSenderId: "913106842247"
 };
 firebase.initializeApp(config);
 // firebase configuration ends

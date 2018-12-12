@@ -3,3 +3,4 @@ doc-channelling test/
 # ignore all logs
 *.log
 firebase.json
+index.html

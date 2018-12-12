@@ -151,7 +151,8 @@ checkEmailVerification = () => {
 
 let counter = new Date().getTime();//to get a unique ID
 
-
+const tableConfirmedAppointments = document.getElementById("confirmedAppointmentTable");
+const tableAppointments = document.getElementById("appointmentTable");
 const table = document.getElementById("channelTable");
 const tableViewDoctor = document.getElementById("docViewTable");
 const formAddDoctor = document.getElementById("addDoctor");
@@ -162,8 +163,9 @@ addToList = () => {
     const channelDate = document.getElementById("channelDate").value;
     const channelDoc = document.getElementById("selectDoc").value;
     const channelLoc = document.getElementById("selectLoc").value;
+    const channelSpec =document.getElementById("selectSpec").value;
 
-    addChannellingDatesOfLocations(channelDate, channelDoc, channelLoc);
+    addChannellingDatesOfLocations(channelDate, channelDoc, channelLoc, channelSpec);
 }
 
 
@@ -171,21 +173,23 @@ addToList = () => {
 // Add Doctor Info to the firebase DB
 formAddDoctor.addEventListener("submit", (e) => {
     let docName = document.getElementById("docName").value;
+    let docID = document.getElementById("slmcId").value;
     let docSpecial = document.getElementById("docSpecial").value;
     let docContact = document.getElementById("docContact").value;
     let docEmail = document.getElementById("docEmail").value;
     e.preventDefault();
     // console.log(task + description);
-    addDoctorInfo(docName, docSpecial, docContact, docEmail);
+    addDoctorInfo(docName, docID, docSpecial, docContact, docEmail);
     formAddDoctor.reset();
 });
 
-addDoctorInfo = (docName, docSpecial, docContact, docEmail) => {
+addDoctorInfo = (docName, docID, docSpecial, docContact, docEmail) => {
     counter += 1;
     console.log(counter);
     var doctorInfo = {
         id: counter,
         docName: docName,
+        docId: docID,
         docSpecial: docSpecial,
         docContact: docContact,
         docEmail: docEmail
@@ -206,6 +210,21 @@ loadSelectDoc = () => {
         var option = document.createElement("option");
         option.text = docInfoValue.docName;
         document.getElementById("selectDoc").add(option);
+
+    });
+
+}
+
+//Update Specialization Selection Combo Box
+loadSelectSpec = () => {
+    let docInfo = firebase.database().ref("docChannelling/doctorInfo/");
+    docInfo.on("child_added", (data) => {
+        let docInfoValue = data.val();
+        console.log(docInfoValue.docSpecial);
+
+        var option = document.createElement("option");
+        option.text = docInfoValue.docSpecial;
+        document.getElementById("selectSpec").add(option);
 
     });
 
@@ -253,24 +272,26 @@ loadSelectChannelCenter = () => {
 
 }
 // Add Channelling dates and Locations of Doctors to firebase
-addChannellingDatesOfLocations = (date, docName, channelCenterName) => {
+addChannellingDatesOfLocations = (date, docName, channelCenterName, channelSpec) => {
     counter += 1;
     console.log(counter);
     var channelDocInfo = {
-        id: counter,
+        id: ""+counter,
         date: date,
         docName: docName,
         channelCenterName: channelCenterName,
+        channelSpec : channelSpec,
     }
-    let db = firebase.database().ref("docChannelling/channelDocInfo/" + counter); //referencing the firebase database folder.
+    let db = firebase.database().ref("docChannelling/channelDocInformation/" + counter); //referencing the firebase database folder.
     db.set(channelDocInfo); //sending data object to the firebase db.
 }
 
 //Update Channel Doctors of Locations
 loadChannelDocTable = () => {
-    let channelDocInfo = firebase.database().ref("docChannelling/channelDocInfo/");
+    let channelDocInfo = firebase.database().ref("docChannelling/channelDocInformation/");
     channelDocInfo.on("child_added", (data) => {
         let channelDocInfoValue = data.val();
+
         console.log(channelDocInfoValue.docName, channelDocInfoValue.date, channelDocInfoValue.channelCenterName, channelDocInfoValue.id);
 
         var row = table.insertRow(table.rows.length);
@@ -278,8 +299,85 @@ loadChannelDocTable = () => {
         row.insertCell(0).innerHTML = channelDocInfoValue.date;
         row.insertCell(1).innerHTML = channelDocInfoValue.docName;
         row.insertCell(2).innerHTML = channelDocInfoValue.channelCenterName;
-        row.insertCell(3).innerHTML = `<button class='btn btn-danger' onclick='deleteRow(this, ${channelDocInfoValue.id})'>Remove</button>`
+        row.insertCell(3).innerHTML = channelDocInfoValue.channelSpec;
+        row.insertCell(4).innerHTML = `<button class='btn btn-danger' onclick='deleteRow(this, ${channelDocInfoValue.id})'>Remove</button>`
 
+    });
+
+}
+
+//Update Appointments Table
+loadAppointmentsTable = () => {
+    let appointmentInfo = firebase.database().ref("docChannelling/appointments/");
+    appointmentInfo.on("child_added", (data) => {
+        let appointmentInfoValue = data.val();
+        console.log(appointmentInfoValue.customerName, appointmentInfoValue.doctorName, appointmentInfoValue.channelCenterName, appointmentInfoValue.dateOfAppointment);
+        var row = tableAppointments.insertRow(tableAppointments.rows.length);
+
+        row.insertCell(0).innerHTML = appointmentInfoValue.customerName;
+        row.insertCell(1).innerHTML = appointmentInfoValue.doctorName;
+        row.insertCell(2).innerHTML = appointmentInfoValue.channelCenterName;
+        row.insertCell(3).innerHTML =  appointmentInfoValue.dateOfAppointment;
+        row.insertCell(4).innerHTML =  data.key;
+        row.insertCell(5).innerHTML = `<button class='btn btn-success' onclick='confirmAppointment(this,${"\""+appointmentInfoValue.customerName+""}", ${"\""+appointmentInfoValue.doctorName+""}", ${"\""+appointmentInfoValue.channelCenterName+""}", ${"\""+appointmentInfoValue.dateOfAppointment+""}", ${"\""+data.key+""}")'>Confirm</button>`
+        row.insertCell(6).innerHTML = `<button class='btn btn-danger' onclick='deleteRowelaz(this, ${"\""+data.key+""}")'>Remove</button>`
+
+    });
+
+}
+
+//confirm requested appointment
+confirmAppointment = (row, customerName, doctorName, channelCenterName, dateOfAppointment, key)=>{
+
+    var time = prompt("Please enter available time for the booking");
+    if (time != null) {
+        if (confirm("Are you sure you want to confirm this booking?")) {
+            var appointmentInfoObj = {
+                customerName: customerName,
+                doctorName: doctorName,
+                channelCenterName: channelCenterName,
+                dateOfAppointment: dateOfAppointment,
+                time : time,
+            }
+            let db = firebase.database().ref("docChannelling/confirmedAppointments/" + key); //referencing the firebase database folder.
+            db.set(appointmentInfoObj); //sending data object to the firebase db.
+        
+            let appointInfo = firebase.database().ref("docChannelling/appointments/" + key);
+            appointInfo.remove();
+        
+            tableAppointments.deleteRow(row.parentNode.parentNode.rowIndex);
+          } else {
+        
+          }
+    }
+ 
+console.log(key);
+}
+
+//delete requested appointments
+deleteRowelaz = (row, key)=>{
+    let appointInfo = firebase.database().ref("docChannelling/appointments/" + key);
+    appointInfo.remove();
+
+    tableAppointments.deleteRow(row.parentNode.parentNode.rowIndex);
+console.log(key);
+}
+
+//Update Confirmed Appointments Table
+loadConfirmedAppointmentsTable = () => {
+    let confirmedAppointmentInfo = firebase.database().ref("docChannelling/confirmedAppointments/");
+    confirmedAppointmentInfo.on("child_added", (data) => {
+        let confirmedAppointmentInfoValue = data.val();
+        // console.log(appointmentInfoValue.customerName, appointmentInfoValue.doctorName, appointmentInfoValue.channelCenterName, appointmentInfoValue.dateOfAppointment);
+        var row = tableConfirmedAppointments.insertRow(tableConfirmedAppointments.rows.length);
+
+        row.insertCell(0).innerHTML = confirmedAppointmentInfoValue.customerName;
+        row.insertCell(1).innerHTML = confirmedAppointmentInfoValue.doctorName;
+        row.insertCell(2).innerHTML = confirmedAppointmentInfoValue.channelCenterName;
+        row.insertCell(3).innerHTML =  confirmedAppointmentInfoValue.dateOfAppointment;
+        row.insertCell(4).innerHTML =  confirmedAppointmentInfoValue.time;
+        row.insertCell(5).innerHTML = data.key;
+        
     });
 
 }
@@ -289,15 +387,16 @@ viewDoctorInfo = () => {
     let docInfo = firebase.database().ref("docChannelling/doctorInfo/");
     docInfo.on("child_added", (data) => {
         let docInfoValue = data.val();
-        //console.log(channelDocInfoValue.docName, channelDocInfoValue.date, channelDocInfoValue.channelCenterName, channelDocInfoValue.id);
+        console.log( "Newly Added", docInfoValue.docId);
         var table = document.getElementById("docViewTable");
         var row = document.getElementById("docViewTable").insertRow(table.rows.length);
 
         row.insertCell(0).innerHTML = docInfoValue.docName;
-        row.insertCell(1).innerHTML = docInfoValue.docSpecial;
-        row.insertCell(2).innerHTML = docInfoValue.docContact;
-        row.insertCell(3).innerHTML = docInfoValue.docEmail;
-        row.insertCell(4).innerHTML = `<button class='btn btn-danger' onclick='deleteDocRow(this, ${docInfoValue.id})'>Remove</button>`
+        row.insertCell(1).innerHTML = docInfoValue.docId;
+        row.insertCell(2).innerHTML = docInfoValue.docSpecial;
+        row.insertCell(3).innerHTML = docInfoValue.docContact;
+        row.insertCell(4).innerHTML = docInfoValue.docEmail;
+        row.insertCell(5).innerHTML = `<button class='btn btn-danger' onclick='deleteDocRow(this, ${docInfoValue.id})'>Remove</button>`
 
     });
 
@@ -324,7 +423,7 @@ viewChannelCentreInfo = () => {
 //delete from channel date info table
 deleteRow = (row, id) => {
 
-    let channelDocInfo = firebase.database().ref("docChannelling/channelDocInfo/" + id);
+    let channelDocInfo = firebase.database().ref("docChannelling/channelDocInformation/" + id);
     channelDocInfo.remove();
 
     const table = document.getElementById("channelTable");
@@ -348,12 +447,19 @@ deleteChannelRow = (row, id) => {
 
 }
 
+
+
+
+//These functions may load with page load
 whenLoad = () => {
     viewChannelCentreInfo();
     viewDoctorInfo();
     loadSelectDoc();
     loadSelectChannelCenter();
+    loadSelectSpec();
     loadChannelDocTable();
+    loadAppointmentsTable();
+    loadConfirmedAppointmentsTable();
 
 }
 
